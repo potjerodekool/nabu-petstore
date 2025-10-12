@@ -1,1 +1,1 @@
-Petstore demo application writting in Nabu
+Petstore demo application writing in Nabu

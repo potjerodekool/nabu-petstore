@@ -10,7 +10,7 @@ import java.util.ArrayList;
 import java.util.UUID;
 
 @RestController
-@RequestMapping(value = {"/v2/pets"})
+@RequestMapping(value = {"/v1/pets"})
 public class PetController {
 
     private pets : List<Pet> = new ArrayList<Pet>();
