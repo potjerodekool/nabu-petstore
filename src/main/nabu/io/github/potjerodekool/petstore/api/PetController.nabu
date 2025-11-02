@@ -1,6 +1,8 @@
 package io.github.potjerodekool.petstore.api;
 
-import io.github.potjerodekool.petstore.api.model.Pet;
+import io.github.potjerodekool.petstore.api.model.PetDto;
+import io.github.potjerodekool.petstore.data.entity.Pet;
+import io.github.potjerodekool.petstore.data.repository.PetRepository;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -8,23 +10,52 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.UUID;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping(value = {"/v1/pets"})
 public class PetController {
 
-    private pets : List<Pet> = new ArrayList<Pet>();
+    private petRepository : PetRepository;
 
-    public PetController() {
-        final var pet = new Pet();
-        pet.setId(UUID.randomUUID());
-        pet.setType("dog");
-        pet.setName("Buddy");
-        pets.add(pet);
+    public PetController(final petRepository : PetRepository) {
+        this.petRepository = petRepository;
+
+        final var tweety = new Pet();
+        tweety.setType("Bird");
+        tweety.setName("Tweety");
+        petRepository.save(tweety);
+
+        final var sylvester = new Pet();
+        sylvester.setType("Cat");
+        sylvester.setName("Sylvester J. Pussycat Sr.");
+        petRepository.save(sylvester);
     }
 
     @GetMapping
-    public fun getPets(): List<Pet> {
-        return this.pets;
+    public fun getPets(): List<PetDto> {
+        final var result = this.petRepository.findAll();
+        final var resultList = new ArrayList<PetDto>();
+
+        for (var i = 0; i < result.size(); i++) {
+            final var pet : Pet = (Pet) result.get(i);
+            final var petDto = this.mapToDto(pet);
+            resultList.add(petDto);
+        }
+
+        return resultList;
+    }
+
+    private fun mapToDto(pet: Pet): PetDto {
+        final var id = pet.getId();
+        final var type = pet.getType();
+        final var name = pet.getName();
+
+        final var petDto = new PetDto();
+        petDto.setId(id);
+        petDto.setType(type);
+        petDto.setName(name);
+        return petDto;
     }
 }

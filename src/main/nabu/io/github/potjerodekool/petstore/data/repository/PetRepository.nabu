@@ -1,0 +1,8 @@
+package io.github.potjerodekool.petstore.data.repository;
+
+import io.github.potjerodekool.petstore.data.entity.Pet;
+import org.springframework.data.jpa.repository.JpaRepository;
+import java.util.UUID;
+
+public interface PetRepository extends JpaRepository<Pet, UUID> {
+}
