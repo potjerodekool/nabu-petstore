@@ -1,0 +1,173 @@
+package io.github.potjerodekool.petstore.api;
+
+import io.github.potjerodekool.petstore.api.model.Status;
+import io.github.potjerodekool.petstore.api.model.PetDto;
+import io.github.potjerodekool.petstore.api.model.CategoryDto;
+import io.github.potjerodekool.petstore.api.model.TagDto;
+import io.github.potjerodekool.petstore.data.entity.Pet;
+import io.github.potjerodekool.petstore.data.entity.Tag;
+import io.github.potjerodekool.petstore.data.entity.Category;
+import io.github.potjerodekool.petstore.data.repository.PetRepository;
+import io.github.potjerodekool.petstore.data.repository.CategoryRepository;
+import io.github.potjerodekool.petstore.data.repository.TagRepository;
+import io.github.potjerodekool.petstore.service.ImageService;
+import io.github.potjerodekool.petstore.mapper.PetMapper;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.UUID;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.stream.Collectors;
+
+@Service
+public class PetService {
+
+    private final petRepository : PetRepository;
+    private final categoryRepository : CategoryRepository;
+    private final tagRepository: TagRepository;
+    private final imageService: ImageService;
+    private final petMapper : PetMapper;
+
+    public PetService(final petRepository : PetRepository,
+                      final categoryRepository : CategoryRepository,
+                      final tagRepository: TagRepository,
+                      final imageService: ImageService,
+                      final petMapper : PetMapper) {
+        this.petRepository = petRepository;
+        this.categoryRepository = categoryRepository;
+        this.tagRepository = tagRepository;
+        this.imageService = imageService;
+        this.petMapper = petMapper;
+    }
+
+    public fun findAll(): List<Pet> {
+        return this.petRepository.findAll();
+    }
+
+    @Transactional
+    public fun createPet(final dto: PetDto): void {
+        final var pet = new Pet();
+        this.doUpdatePet(dto, pet);
+        this.petRepository.save(pet);
+    }
+
+    @Transactional
+    public fun updatePet(final dto: PetDto): void {
+        final var pet = this.petRepository.findById(dto.getId()).get();
+        this.petRepository.findById(dto.getId()).ifPresent(pet -> {
+                this.doUpdatePet(dto, pet);
+            }
+        );
+    }
+
+    private fun doUpdatePet(final dto: PetDto,
+                            final pet: Pet): void {
+        final var categoryDto = dto.getCategory();
+        final var category = this.categoryRepository.findById(categoryDto.getId())
+            .get();
+        pet.setCategory(category);
+        pet.setName(dto.getName());
+
+        if (dto.getStatus() == null) {
+            pet.setStatus(Status.available);
+        } else {
+            pet.setStatus(dto.getStatus());
+        }
+
+        final var tagDtos = dto.getTags();
+        final var tagIds = new HashSet<UUID>();
+
+        for (var tagDto in tagDtos) {
+            tagIds.add(tagDto.getId());
+        }
+
+        final var tags = this.tagRepository.findAllById(tagIds).stream()
+            .collect(Collectors.toSet());
+        pet.setTags(tags);
+    }
+
+    public fun getPetById(final id: UUID): PetDto {
+        final var pet = this.petRepository.findById(id).get();
+        return this.toDto(pet);
+    }
+
+    private fun toDto(pet: Pet) : PetDto {
+        final var id = pet.getId();
+        final var category = pet.getCategory();
+        final var name = pet.getName();
+
+        final var categoryDto = new CategoryDto();
+
+        categoryDto.setId(category.getId());
+        categoryDto.setName(category.getName());
+
+        final var petDto = new PetDto();
+        petDto.setId(id);
+        petDto.setCategory(categoryDto);
+        petDto.setName(name);
+        petDto.setStatus(pet.getStatus());
+
+        final var tags = new HashSet<TagDto>();
+
+        for (var tag in pet.getTags()) {
+            final var tagDto = new TagDto();
+            tagDto.setId(tag.getId());
+            tagDto.setName(tag.getName());
+            tags.add(tagDto);
+        }
+
+        petDto.setTags(tags);
+
+        return petDto;
+    }
+
+    public fun findByStatus(status: List<Status>): List<PetDto> {
+        final var pets = petRepository.findByStatus(status);
+        final var result = new ArrayList<PetDto>();
+
+        for (var i = 0; i < pets.size(); i++) {
+            final var pet = (Pet) pets.get(i);
+            final var dto = this.toDto(pet);
+            result.add(dto);
+        }
+
+        return result;
+    }
+
+    public fun findByTags(tags: List<String>): List<PetDto> {
+        final var pets = petRepository.findByTags(tags);
+        final var result = new ArrayList<PetDto>();
+
+        for (var i = 0; i < pets.size(); i++) {
+            final var pet = (Pet) pets.get(i);
+            final var dto = this.toDto(pet);
+            result.add(dto);
+        }
+
+        return result;
+    }
+
+    public fun deleteById(final id: UUID): void {
+        petRepository.deleteById(id);
+    }
+
+    public fun uploadImage(final id: UUID,
+                           final image: MultipartFile): void {
+        final var pet = this.petRepository.findById(id).get();
+        final var bytes = (byte[]) image.getBytes();
+        final var url = this.imageService.storeImage(bytes);
+        pet.addPhotoUrl(url);
+    }
+
+    public fun updatePetWithForm(id: UUID, name : String, status : Status): void {
+        final var pet = this.petRepository.findById(id).get();
+        pet.setName(name);
+        pet.setStatus(status);
+    }
+
+}

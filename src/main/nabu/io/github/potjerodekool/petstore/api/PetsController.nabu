@@ -1,0 +1,113 @@
+package io.github.potjerodekool.petstore.api;
+
+import io.github.potjerodekool.petstore.api.model.Status;
+import io.github.potjerodekool.petstore.api.model.PetDto;
+import io.github.potjerodekool.petstore.api.model.CategoryDto;
+import io.github.potjerodekool.petstore.api.model.TagDto;
+import io.github.potjerodekool.petstore.data.entity.Pet;
+import io.github.potjerodekool.petstore.data.entity.Category;
+import io.github.potjerodekool.petstore.data.entity.Tag;
+import io.github.potjerodekool.petstore.data.repository.CategoryRepository;
+import io.github.potjerodekool.petstore.data.repository.PetRepository;
+import io.github.potjerodekool.petstore.data.repository.TagRepository;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
+import java.util.HashSet;
+import java.util.ArrayList;
+import java.util.UUID;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+@RestController
+@RequestMapping(value = {"/v1/pets"})
+public class PetsController {
+
+    private petRepository : PetRepository;
+    private categoryRepository : CategoryRepository;
+    private tagRepository: TagRepository;
+
+    public PetsController(final petRepository : PetRepository,
+                          final categoryRepository : CategoryRepository,
+                          final tagRepository: TagRepository) {
+        this.petRepository = petRepository;
+        this.categoryRepository = categoryRepository;
+        this.tagRepository = tagRepository;
+
+        final var cuteTag = new Tag();
+        cuteTag.setName("Cute");
+        tagRepository.save(cuteTag);
+
+        final var birdCategory = new Category();
+        birdCategory.setName("Bird");
+        this.categoryRepository.save(birdCategory);
+
+        final var catCategory = new Category();
+        catCategory.setName("Cat");
+        this.categoryRepository.save(catCategory);
+
+        final var tweety = new Pet();
+        tweety.setCategory(birdCategory);
+        tweety.setName("Tweety");
+        tweety.setStatus(Status.available);
+
+        final var tags = new HashSet<Tag>();
+        tags.add(cuteTag);
+
+        tweety.setTags(tags);
+
+        petRepository.save(tweety);
+
+        final var sylvester = new Pet();
+        sylvester.setCategory(catCategory);
+        sylvester.setName("Sylvester J. Pussycat Sr.");
+        sylvester.setStatus(Status.available);
+        petRepository.save(sylvester);
+    }
+
+    @GetMapping
+    public fun getPets(): List<PetDto> {
+        final var result = this.petRepository.findAll();
+        final var resultList = new ArrayList<PetDto>();
+
+        for (var i = 0; i < result.size(); i++) {
+            final var pet : Pet = (Pet) result.get(i);
+            final var petDto = this.mapToDto(pet);
+            resultList.add(petDto);
+        }
+
+        return resultList;
+    }
+
+    private fun mapToDto(pet: Pet): PetDto {
+        final var id = pet.getId();
+        final var category = pet.getCategory();
+        final var name = pet.getName();
+
+        final var categoryDto = new CategoryDto();
+
+        categoryDto.setId(category.getId());
+        categoryDto.setName(category.getName());
+
+        final var petDto = new PetDto();
+        petDto.setId(id);
+        petDto.setCategory(categoryDto);
+        petDto.setName(name);
+        petDto.setStatus(pet.getStatus());
+
+        final var tags = new HashSet<TagDto>();
+
+        for (var tag in pet.getTags()) {
+            final var tagDto = new TagDto();
+            tagDto.setId(tag.getId());
+            tagDto.setName(tag.getName());
+            tags.add(tagDto);
+        }
+
+        petDto.setTags(tags);
+
+        return petDto;
+    }
+}

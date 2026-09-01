@@ -1,61 +1,76 @@
 package io.github.potjerodekool.petstore.api;
 
 import io.github.potjerodekool.petstore.api.model.PetDto;
-import io.github.potjerodekool.petstore.data.entity.Pet;
-import io.github.potjerodekool.petstore.data.repository.PetRepository;
+import io.github.potjerodekool.petstore.api.model.Status;
+
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestParam;
 
-import java.util.List;
-import java.util.ArrayList;
+import org.springframework.web.multipart.MultipartFile;
+
+import jakarta.validation.Valid;
+
 import java.util.UUID;
-import java.util.Optional;
-import java.util.stream.Collectors;
+import java.util.List;
 
 @RestController
-@RequestMapping(value = {"/v1/pets"})
+@RequestMapping(value = {"/pet"})
 public class PetController {
 
-    private petRepository : PetRepository;
+    private petService : PetService;
 
-    public PetController(final petRepository : PetRepository) {
-        this.petRepository = petRepository;
-
-        final var tweety = new Pet();
-        tweety.setType("Bird");
-        tweety.setName("Tweety");
-        petRepository.save(tweety);
-
-        final var sylvester = new Pet();
-        sylvester.setType("Cat");
-        sylvester.setName("Sylvester J. Pussycat Sr.");
-        petRepository.save(sylvester);
+    public PetController(final petService : PetService) {
+        this.petService = petService;
     }
 
-    @GetMapping
-    public fun getPets(): List<PetDto> {
-        final var result = this.petRepository.findAll();
-        final var resultList = new ArrayList<PetDto>();
-
-        for (var i = 0; i < result.size(); i++) {
-            final var pet : Pet = (Pet) result.get(i);
-            final var petDto = this.mapToDto(pet);
-            resultList.add(petDto);
-        }
-
-        return resultList;
+    @PostMapping
+    public fun createPet(@RequestBody final dto: PetDto) : void {
+        petService.createPet(dto);
     }
 
-    private fun mapToDto(pet: Pet): PetDto {
-        final var id = pet.getId();
-        final var type = pet.getType();
-        final var name = pet.getName();
-
-        final var petDto = new PetDto();
-        petDto.setId(id);
-        petDto.setType(type);
-        petDto.setName(name);
-        return petDto;
+    @PutMapping
+    public fun updatePet(@RequestBody final dto: PetDto) : void {
+        petService.updatePet(dto);
     }
+
+    @GetMapping(value = {"/{petId}"})
+    public fun getPetById(@PathVariable(value = "petId") petId: UUID): PetDto {
+        return petService.getPetById(petId);
+    }
+
+    @GetMapping(value = {"/findByStatus"})
+    public fun findByStatus(@RequestParam(value = "status") status: List<Status>): List<PetDto> {
+        return petService.findByStatus(status);
+    }
+
+    @GetMapping(value = {"/findByTags"})
+    public fun findByTags(@RequestParam(value = "tags") tags: List<String>): List<PetDto> {
+        return petService.findByTags(tags);
+    }
+
+    @DeleteMapping(value = {"/{petId}"})
+    public fun deleteById(@PathVariable(value = "petId") petId: UUID): void {
+        petService.deleteById(petId);
+    }
+
+    @PostMapping(value = {"/{petId}/uploadImage"})
+    public fun uploadImage(@PathVariable(value = "petId") petId: UUID,
+            @RequestParam(value = "image") final file : MultipartFile): void {
+        petService.uploadImage(petId, file);
+    }
+
+    @PostMapping(value = {"/{petId}"})
+    public fun updatePetWithForm(@PathVariable(value = "petId") petId: UUID,
+                    @Valid @RequestParam(value = "name", required = false) name : String,
+                    @Valid @RequestParam(value = "status", required = false) status: Status): void {
+       petService.updatePetWithForm(petId, name, status);
+    }
+
 }

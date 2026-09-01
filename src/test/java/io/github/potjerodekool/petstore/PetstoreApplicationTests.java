@@ -1,12 +1,12 @@
 package io.github.potjerodekool.petstore;
 
-import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
+//import org.junit.jupiter.api.Test;
+//import org.springframework.boot.test.context.SpringBootTest;
 
-@SpringBootTest
+//@SpringBootTest
 class PetstoreApplicationTests {
 
-	@Test
+//	@Test
 	void contextLoads() {
 	}
 

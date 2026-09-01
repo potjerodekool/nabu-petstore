@@ -1,0 +1,12 @@
+package io.github.potjerodekool.petstore.mapper;
+
+import io.github.potjerodekool.petstore.data.entity.Pet;
+import io.github.potjerodekool.petstore.api.model.PetDto;
+
+import org.mapstruct.Mapper;
+
+@Mapper(componentModel = "spring")
+public abstract class PetMapper {
+
+    abstract fun toDto(pet: Pet): PetDto;
+}

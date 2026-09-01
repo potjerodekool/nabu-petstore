@@ -1,10 +1,15 @@
 package io.github.potjerodekool.petstore.data.entity;
 
+import io.github.potjerodekool.petstore.api.model.Status;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.ElementCollection;
 import java.util.UUID;
+import java.util.Set;
+import java.util.HashSet;
 
 @Entity
 public class Pet {
@@ -14,12 +19,16 @@ public class Pet {
 
     private name : String;
 
-    private status : String;
-
-    private type : String;
+    private status : Status;
 
     @ManyToOne
     private category : Category;
+
+    @ElementCollection(targetClass = Tag.class)
+    private tags: Set<Tag>;
+
+    @ElementCollection(targetClass = String.class)
+    private photoUrls: Set<String>;
 
     public fun getId(): UUID {
         return this.id;
@@ -37,13 +46,34 @@ public class Pet {
         this.name = name;
     }
 
-    public fun getType() : String {
-        return this.type;
+    public fun getCategory() : Category {
+        return this.category;
     }
 
-    public fun setType(type: String): void {
-        this.type = type;
+    public fun setCategory(category: Category): void {
+        this.category = category;
     }
 
+    public fun getStatus(): Status {
+        return this.status;
+    }
 
+    public fun setStatus(final status: Status): void {
+        this.status = status;
+    }
+
+    public fun getTags(): Set<Tag> {
+        return this.tags;
+    }
+
+    public fun setTags(tags: Set<Tag>): void {
+        this.tags = tags;
+    }
+
+    public fun addPhotoUrl(final url: String): void {
+         if (this.photoUrls == null) {
+            this.photoUrls = new HashSet();
+         }
+         this.photoUrls.add(url);
+    }
 }
